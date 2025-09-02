@@ -39,8 +39,55 @@ def draw_line(p_list, algorithm):
             x += x_inc
             y += y_inc
     elif algorithm == 'Bresenham':
-        pass
-    return result
+        # 计算坐标差值
+        dx = x1 - x0
+        dy = y1 - y0
+        # 确定步进方向
+        x_step = 1 if dx > 0 else -1 if dx < 0 else 0
+        y_step = 1 if dy > 0 else -1 if dy < 0 else 0
+        # 取绝对值，便于比较和计算
+        dx_abs = abs(dx)
+        dy_abs = abs(dy)
+        x, y = x0, y0
+        result.append((x, y))
+        # 处理特殊情况：垂直线
+        if dx_abs == 0:
+            # 沿y轴步进
+            for _ in range(dy_abs):
+                y += y_step
+                result.append((x, y))
+            return result
+        # 处理特殊情况：水平线
+        if dy_abs == 0:
+            # 沿x轴步进
+            for _ in range(dx_abs):
+                x += x_step
+                result.append((x, y))
+            return result
+        # 通用情况：根据斜率绝对值决定步进方向
+        if dx_abs > dy_abs:
+            # 斜率绝对值小于1，沿x轴步进
+            p = 2 * dy_abs - dx_abs
+            for _ in range(dx_abs):
+                x += x_step
+                if p >= 0:
+                    y += y_step
+                    p += 2 * (dy_abs - dx_abs)
+                else:
+                    p += 2 * dy_abs
+                result.append((x, y))
+        else:
+            # 斜率绝对值大于等于1，沿y轴步进
+            p = 2 * dx_abs - dy_abs
+            for _ in range(dy_abs):
+                y += y_step
+                if p >= 0:
+                    x += x_step
+                    p += 2 * (dx_abs - dy_abs)
+                else:
+                    p += 2 * dx_abs
+                result.append((x, y))
+        return result
 
 
 def draw_polygon(p_list, algorithm):
