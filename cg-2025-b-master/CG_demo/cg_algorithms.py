@@ -26,10 +26,18 @@ def draw_line(p_list, algorithm):
             for x in range(x0, x1 + 1):
                 result.append((x, int(y0 + k * (x - x0))))
     elif algorithm == 'DDA':
-        dx = x0 - x1
-        dy = y0 - y1
-        steps = abs(dx) if (abs(dx) > abs(dy)) else abs(dy)
-        
+        dx = x1 - x0
+        dy = y1 - y0
+        steps = max(abs(dx), abs(dy))
+        x_inc = dx / steps
+        y_inc = dy / steps
+        # 当前点坐标（使用临时变量，避免修改原始起点）
+        x, y = x0, y0
+        for _ in range(int(steps) + 1):
+            # 对坐标进行四舍五入取整
+            result.append((round(x), round(y)))
+            x += x_inc
+            y += y_inc
     elif algorithm == 'Bresenham':
         pass
     return result
