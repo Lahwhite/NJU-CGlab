@@ -251,4 +251,43 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
     :param algorithm: (string) 使用的裁剪算法，包括'Cohen-Sutherland'和'Liang-Barsky'
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1]]) 裁剪后线段的起点和终点坐标
     """
-    pass
+    result = []
+    # 解析端点坐标
+    (x0, y0), (x1, y1) = p_list
+    if algorithm == 'Cohen-Sutherland':
+        # 对端点进行编码
+        byte1 = 0x0
+        byte2 = 0x0
+        if x0 < x_min: byte1 = byte1 | 0x1
+        if x0 > x_max: byte1 = byte1 | 0x2
+        if y0 < y_min: byte1 = byte1 | 0x4
+        if y0 > y_max: byte1 = byte1 | 0x8
+        if x1 < x_min: byte2 = byte2 | 0x1
+        if x1 > x_max: byte2 = byte2 | 0x2
+        if y1 < y_min: byte2 = byte2 | 0x4
+        if y1 > y_max: byte2 = byte2 | 0x8
+        # 完全在窗口内
+        if (byte1 == 0) and (byte2 == 0): return [[x0, y0], [x1, y1]]
+        # 完全在窗口外
+        elif (byte1 & byte2) != 0: return []
+        # 部分在窗口内
+        else:
+            # 特判：垂直线的情况，无法计算斜率
+            if x1 - x0 == 0:
+                if y0 < y_min: result.append([x0, y_min])
+                elif y0 > y_max: result.append([x0, y_max])
+                else: result.append([x0, y0])
+                if y1 < y_min: result.append([x1, y_min])
+                elif y1 > y_max: result.append([x1, y_max])
+                else: result.append([x1, y1])
+                return result
+            # 计算斜率
+            k = (y1 - y0) / (x1 - x0)
+            # 首先看第一个端点是否在窗口内
+            if byte1 == 0: result.append([x0, y0])
+            else:
+                pass
+            # 再处理第二个端点是否在窗口内
+            
+    elif algorithm == 'Liang-Barsky':
+        pass
