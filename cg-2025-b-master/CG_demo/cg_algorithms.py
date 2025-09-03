@@ -225,7 +225,19 @@ def scale(p_list, x, y, s):
     :param s: (float) 缩放倍数
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    pass
+    result = []
+    for [x_n, y_n] in p_list:
+        # 平移到缩放中心，消除缩放偏移
+        x_n -= x
+        y_n -= y 
+        # 按比例缩放
+        x_n *= s
+        y_n *= s
+        # 平移回原位置
+        x_n += x
+        y_n += y
+        result.append([round(x_n), round(y_n)])
+    return result
 
 
 def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
