@@ -110,7 +110,75 @@ def draw_ellipse(p_list):
     :param p_list: (list of list of int: [[x0, y0], [x1, y1]]) 椭圆的矩形包围框左上角和右下角顶点坐标
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
-    pass
+    # 解析包围框坐标
+    (x0, y0), (x1, y1) = p_list
+    # 计算椭圆中心
+    center_x = (x0 + x1) // 2
+    center_y = (y0 + y1) // 2
+    # 计算长半轴和短半轴（取绝对值确保为正）
+    a = abs(x1 - x0) // 2  # x方向半轴
+    b = abs(y1 - y0) // 2  # y方向半轴
+    # 特殊情况处理：若半轴为0，绘制一个点
+    if a == 0 and b == 0:
+        return [[center_x, center_y]]
+    if a == 0:  # 退化为垂直线
+        return [[center_x, y] for y in range(min(y0, y1), max(y0, y1) + 1)]
+    if b == 0:  # 退化为水平线
+        return [[x, center_y] for x in range(min(x0, x1), max(x0, x1) + 1)]
+    result = []
+    x, y = 0, b  # 从第一象限起点开始
+    # 计算初始决策变量（区域1）
+    a_sq = a * a
+    b_sq = b * b
+    d1 = b_sq - a_sq * b + (a_sq // 4)
+    two_a_sq = 2 * a_sq
+    two_b_sq = 2 * b_sq
+    # 区域1：x为主方向步进，直到2*b²*x >= 2*a²*y（斜率绝对值<=1的区域）
+    while two_b_sq * x <= two_a_sq * y:
+        # 添加8个对称点（考虑椭圆中心偏移）
+        result.extend([
+            [center_x + x, center_y + y],
+            [center_x - x, center_y + y],
+            [center_x + x, center_y - y],
+            [center_x - x, center_y - y]
+        ])
+        # 更新决策变量和坐标
+        if d1 < 0:
+            # 中点在椭圆内，选择y不变
+            d1 += two_b_sq * (x + 1)
+        else:
+            # 中点在椭圆外，选择y减1
+            d1 += two_b_sq * (x + 1) - two_a_sq * (y - 1)
+            y -= 1
+        x += 1
+    # 计算区域2的初始决策变量
+    d2 = b_sq * (x + 0.5) ** 2 + a_sq * (y - 1) ** 2 - a_sq * b_sq
+    d2 = int(round(d2))  # 转换为整数运算
+    # 区域2：y为主方向步进，直到y < 0（斜率绝对值>1的区域）
+    while y >= 0:
+        # 添加8个对称点（考虑椭圆中心偏移）
+        result.extend([
+            [center_x + x, center_y + y],
+            [center_x - x, center_y + y],
+            [center_x + x, center_y - y],
+            [center_x - x, center_y - y]
+        ])
+        # 更新决策变量和坐标
+        if d2 > 0:
+            # 中点在椭圆外，选择x不变
+            d2 += two_a_sq * (1 - y)
+        else:
+            # 中点在椭圆内，选择x加1
+            d2 += two_b_sq * (x + 1) + two_a_sq * (1 - y)
+            x += 1
+        y -= 1
+    # 去除可能重复的点（当a或b为0时可能出现）并排序
+    # 转换为元组去重，再转回列表
+    unique_points = list({tuple(p) for p in result})
+    # 按x,y坐标排序，使结果更直观
+    unique_points.sort()
+    # 转回列表的列表形式
+    return [list(p) for p in unique_points]
 
 
 def draw_curve(p_list, algorithm):
