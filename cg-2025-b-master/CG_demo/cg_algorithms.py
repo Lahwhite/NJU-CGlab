@@ -255,39 +255,44 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
     # 解析端点坐标
     (x0, y0), (x1, y1) = p_list
     if algorithm == 'Cohen-Sutherland':
-        # 对端点进行编码
-        byte1 = 0x0
-        byte2 = 0x0
-        if x0 < x_min: byte1 = byte1 | 0x1
-        if x0 > x_max: byte1 = byte1 | 0x2
-        if y0 < y_min: byte1 = byte1 | 0x4
-        if y0 > y_max: byte1 = byte1 | 0x8
-        if x1 < x_min: byte2 = byte2 | 0x1
-        if x1 > x_max: byte2 = byte2 | 0x2
-        if y1 < y_min: byte2 = byte2 | 0x4
-        if y1 > y_max: byte2 = byte2 | 0x8
-        # 完全在窗口内
-        if (byte1 == 0) and (byte2 == 0): return [[x0, y0], [x1, y1]]
-        # 完全在窗口外
-        elif (byte1 & byte2) != 0: return []
-        # 部分在窗口内
-        else:
-            # 特判：垂直线的情况，无法计算斜率
-            if x1 - x0 == 0:
-                if y0 < y_min: result.append([x0, y_min])
-                elif y0 > y_max: result.append([x0, y_max])
-                else: result.append([x0, y0])
-                if y1 < y_min: result.append([x1, y_min])
-                elif y1 > y_max: result.append([x1, y_max])
-                else: result.append([x1, y1])
-                return result
-            # 计算斜率
-            k = (y1 - y0) / (x1 - x0)
-            # 首先看第一个端点是否在窗口内
-            if byte1 == 0: result.append([x0, y0])
+        while True:
+            # 1. 计算两端点区域码
+            byte1 = 0x0
+            byte2 = 0x0
+            if x0 < x_min: byte1 |= 0x1
+            if x0 > x_max: byte1 |= 0x2
+            if y0 < y_min: byte1 |= 0x4
+            if y0 > y_max: byte1 |= 0x8
+            if x1 < x_min: byte2 |= 0x1
+            if x1 > x_max: byte2 |= 0x2
+            if y1 < y_min: byte2 |= 0x4
+            if y1 > y_max: byte2 |= 0x8
+            # 2. 完全在窗口内
+            if byte1 == 0 and byte2 == 0:
+                return [[round(x0), round(y0)], [round(x1), round(y1)]]
+            # 3. 完全在窗口外
+            if (byte1 & byte2) != 0:
+                return []
+            # 4. 部分在窗口内，计算交点（优先处理外侧端点）
+            code_out = byte1 if byte1 != 0 else byte2  # 取外侧端点的区域码
+            x, y = 0, 0
+            # 计算与对应边界的交点
+            if code_out & 0x1:  # 左边界
+                y = y0 + (x_min - x0) * (y1 - y0) / (x1 - x0) if x1 != x0 else y0
+                x = x_min
+            elif code_out & 0x2:  # 右边界
+                y = y0 + (x_max - x0) * (y1 - y0) / (x1 - x0) if x1 != x0 else y0
+                x = x_max
+            elif code_out & 0x4:  # 上边界
+                x = x0 + (y_min - y0) * (x1 - x0) / (y1 - y0) if y1 != y0 else x0
+                y = y_min
+            elif code_out & 0x8:  # 下边界
+                x = x0 + (y_max - y0) * (x1 - x0) / (y1 - y0) if y1 != y0 else x0
+                y = y_max
+            # 5. 更新外侧端点为交点，继续循环
+            if code_out == byte1:
+                x0, y0 = x, y  # 替换起点
             else:
-                pass
-            # 再处理第二个端点是否在窗口内
-            
+                x1, y1 = x, y  # 替换终点  
     elif algorithm == 'Liang-Barsky':
         pass
