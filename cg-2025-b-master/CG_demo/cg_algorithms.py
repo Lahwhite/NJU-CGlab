@@ -295,4 +295,35 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
             else:
                 x1, y1 = x, y  # 替换终点  
     elif algorithm == 'Liang-Barsky':
-        pass
+        (x0, y0), (x1, y1) = p_list
+        dx = x1 - x0
+        dy = y1 - y0
+        p = [-dx, dx, -dy, dy]  # 四条边界的p_k
+        q = [x0 - x_min, x_max - x0, y0 - y_min, y_max - y0]  # 四条边界的q_k
+        t0 = 0.0  # 进入窗口的最大t值
+        t1 = 1.0  # 离开窗口的最小t值
+        for k in range(4):
+            if p[k] == 0:
+                # 直线与边界平行：若q[k] < 0，线段完全在边界外侧
+                if q[k] < 0:
+                    return []
+            else:
+                t = q[k] / p[k]
+                if p[k] < 0:  # 进入边界，更新t0
+                    if t > t0:
+                        t0 = t
+                else:  # 离开边界，更新t1
+                    if t < t1:
+                        t1 = t
+        # 判断可见性：t0 < t1且在[0,1]范围内
+        if t0 < t1 and t0 <= 1 and t1 >= 0:
+            # 计算裁剪后线段的端点
+            x_start = x0 + t0 * dx
+            y_start = y0 + t0 * dy
+            x_end = x0 + t1 * dx
+            y_end = y0 + t1 * dy
+            # 转换为整数坐标
+            return [[round(x_start), round(y_start)], [round(x_end), round(y_end)]]
+        else:
+            # 线段完全不可见
+            return []
