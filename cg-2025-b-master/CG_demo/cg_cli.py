@@ -9,6 +9,7 @@ from PIL import Image
 
 
 if __name__ == '__main__':
+    # 读取命令行的参数
     input_file = sys.argv[1]
     output_dir = sys.argv[2]
     os.makedirs(output_dir, exist_ok=True)
@@ -19,9 +20,12 @@ if __name__ == '__main__':
     height = 0
 
     with open(input_file, 'r') as fp:
+        # 从文件中读取命令
         line = fp.readline()
         while line:
+            # 将命令按照空格分割参数
             line = line.strip().split(' ')
+            # 读取命令的内容，按照不同情况处理
             if line[0] == 'resetCanvas':
                 width = int(line[1])
                 height = int(line[2])
@@ -54,7 +58,20 @@ if __name__ == '__main__':
                 y1 = int(line[5])
                 algorithm = line[6]
                 item_dict[item_id] = ['line', [[x0, y0], [x1, y1]], algorithm, np.array(pen_color)]
-            ...
-
+            elif line[0] == 'drawPolygon':
+                pass
+            elif line[0] == 'drawEllipse':
+                pass
+            elif line[0] == 'drawCurve':
+                pass
+            elif line[0] == 'translate':
+                pass
+            elif line[0] == 'rotate':
+                pass
+            elif line[0] == 'scale':
+                pass
+            elif line[0] == 'clip':
+                pass
+            # 读取下一个命令
             line = fp.readline()
 
