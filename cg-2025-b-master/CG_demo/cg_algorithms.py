@@ -213,7 +213,24 @@ def rotate(p_list, x, y, r):
     :param r: (int) 顺时针旋转角度（°）
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    pass
+    # 将角度转换为弧度
+    angle_rad = math.radians(r)
+    cos_theta = math.cos(angle_rad)
+    sin_theta = math.sin(angle_rad)
+    rotated_points = []
+    for x_n, y_n in p_list:
+        # 1. 平移到旋转中心（相对坐标）
+        x_rel = x_n - x
+        y_rel = y_n - y
+        # 2. 应用顺时针旋转公式
+        x_rot = x_rel * cos_theta + y_rel * sin_theta
+        y_rot = -x_rel * sin_theta + y_rel * cos_theta
+        # 3. 平移回原位置
+        x_new = x_rot + x
+        y_new = y_rot + y
+        # 四舍五入为整数坐标（图形学中像素坐标为整数）
+        rotated_points.append([round(x_new), round(y_new)])
+    return rotated_points
 
 
 def scale(p_list, x, y, s):
