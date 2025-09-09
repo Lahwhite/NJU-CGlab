@@ -76,7 +76,7 @@ if __name__ == '__main__':
                 for i in range(2, sizeofargs - 1, 2):
                     dots.append([int(line[i]), int(line[i + 1])])
                 algorithm = line[sizeofargs - 1]
-                item_dict[item_id] = ['Polygon', dots, algorithm, np.array(pen_color)]        
+                item_dict[item_id] = ['polygon', dots, algorithm, np.array(pen_color)]        
             elif line[0] == 'drawEllipse':
                 item_id = line[1]
                 x0 = int(line[2])
@@ -100,10 +100,9 @@ if __name__ == '__main__':
                 item_id = line[1]
                 dx = int(line[2])
                 dy = int(line[3])
-                item_type, p_list, algorithm, color = item_dict[item_id].values()
+                item_type, p_list, algorithm, color = item_dict[item_id]
                 pixels = alg.translate(p_list, dx, dy)
-                for x, y in pixels:
-                    canvas[height - 1 - y, x] = color
+                item_dict[item_id] = [item_type, pixels, algorithm, color]
             # 存储旋转参数：类型、旋转中心、角度
             elif line[0] == 'rotate':
                 # 命令格式: rotate id x y r
@@ -111,21 +110,19 @@ if __name__ == '__main__':
                 x = int(line[2])
                 y = int(line[3])
                 r = int(line[4])
-                item_type, p_list, algorithm, color = item_dict[item_id].values()
+                item_type, p_list, algorithm, color = item_dict[item_id]
                 pixels = alg.rotate(p_list, x, y, r)
-                for x, y in pixels:
-                    canvas[height - 1 - y, x] = color
+                item_dict[item_id] = [item_type, pixels, algorithm, color]
             # 存储缩放参数：类型、缩放中心、比例
             elif line[0] == 'scale':
                 # 命令格式: scale id x y s
                 item_id = line[1]
                 x = int(line[2])
                 y = int(line[3])
-                s = int(line[4])
-                item_type, p_list, algorithm, color = item_dict[item_id].values()
+                s = float(line[4])
+                item_type, p_list, algorithm, color = item_dict[item_id]
                 pixels = alg.scale(p_list, x, y, s)
-                for x, y in pixels:
-                    canvas[height - 1 - y, x] = color
+                item_dict[item_id] = [item_type, pixels, algorithm, color]
             # 存储裁剪参数：类型、窗口坐标、算法
             elif line[0] == 'clip':
                 # 命令格式: clip id x0 y0 x1 y1 algorithm
@@ -135,10 +132,9 @@ if __name__ == '__main__':
                 x1 = int(line[4])   # 裁剪窗口右下角x
                 y1 = int(line[5])   # 裁剪窗口右下角y
                 algorithm = line[6] # 裁剪算法
-                item_type, p_list, algorithm, color = item_dict[item_id].values()
+                item_type, p_list, algorithm, color = item_dict[item_id]
                 pixels = alg.clip(p_list, x0, y0, x1, y1, algorithm)
-                for x, y in pixels:
-                    canvas[height - 1 - y, x] = color
+                item_dict[item_id] = [item_type, pixels, algorithm, color]
             # 读取下一个命令
             line = fp.readline()
 
