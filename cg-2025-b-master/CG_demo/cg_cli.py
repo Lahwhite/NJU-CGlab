@@ -37,6 +37,8 @@ if __name__ == '__main__':
                 save_name = line[1]
                 canvas = np.zeros([height, width, 3], np.uint8)
                 canvas.fill(255)
+                # 注意到此处的参数为：类型，控制点，算法，颜色
+                # 不存在多余算法的被保存为 ""
                 for item_type, p_list, algorithm, color in item_dict.values():
                     if item_type == 'line':
                         pixels = alg.draw_line(p_list, algorithm)
@@ -53,7 +55,6 @@ if __name__ == '__main__':
                 pen_color[0] = int(line[1])
                 pen_color[1] = int(line[2])
                 pen_color[2] = int(line[3])
-            # 存储曲线参数：类型、端点、算法、画笔颜色
             elif line[0] == 'drawLine':
                 item_id = line[1]
                 x0 = int(line[2])
@@ -62,7 +63,6 @@ if __name__ == '__main__':
                 y1 = int(line[5])
                 algorithm = line[6]
                 item_dict[item_id] = ['line', [[x0, y0], [x1, y1]], algorithm, np.array(pen_color)]
-            # 存储曲线参数：类型、顶点、算法、画笔颜色
             elif line[0] == 'drawPolygon':
                 item_id = line[1]
                 dots = []
@@ -70,16 +70,14 @@ if __name__ == '__main__':
                 for i in range(2, sizeofargs - 1, 2):
                     dots.append([int(line[i]), int(line[i + 1])])
                 algorithm = line[sizeofargs - 1]
-                item_dict[item_id] = ['Polygon', dots, algorithm, np.array(pen_color)]
-            # 存储椭圆参数：类型、对角点坐标、画笔颜色
+                item_dict[item_id] = ['Polygon', dots, algorithm, np.array(pen_color)]        
             elif line[0] == 'drawEllipse':
                 item_id = line[1]
                 x0 = int(line[2])
                 y0 = int(line[3])
                 x1 = int(line[4])
                 y1 = int(line[5])
-                item_dict[item_id] = ['ellipse', [[x0, y0], [x1, y1]], np.array(pen_color)]
-            # 存储曲线参数：类型、控制点、算法、画笔颜色
+                item_dict[item_id] = ['ellipse', [[x0, y0], [x1, y1]], "", np.array(pen_color)]
             elif line[0] == 'drawCurve':
                 # 命令格式: drawCurve id x0 y0 x1 y1 x2 y2 ... algorithm
                 item_id = line[1]
