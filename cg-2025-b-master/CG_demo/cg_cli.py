@@ -131,7 +131,6 @@ if __name__ == '__main__':
                 y0 = int(line[3])   # 裁剪窗口左上角y
                 x1 = int(line[4])   # 裁剪窗口右下角x
                 y1 = int(line[5])   # 裁剪窗口右下角y
-                algorithm = line[6] # 裁剪算法
                 item_type, p_list, algorithm, color = item_dict[item_id]
                 pixels = alg.clip(p_list, x0, y0, x1, y1, algorithm)
                 item_dict[item_id] = [item_type, pixels, algorithm, color]
