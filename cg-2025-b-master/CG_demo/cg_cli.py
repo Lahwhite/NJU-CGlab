@@ -100,23 +100,32 @@ if __name__ == '__main__':
                 item_id = line[1]
                 dx = int(line[2])
                 dy = int(line[3])
-                item_dict[item_id] = ['translate', dx, dy]
+                item_type, p_list, algorithm, color = item_dict[item_id].values()
+                pixels = alg.translate(p_list, dx, dy)
+                for x, y in pixels:
+                    canvas[height - 1 - y, x] = color
             # 存储旋转参数：类型、旋转中心、角度
             elif line[0] == 'rotate':
                 # 命令格式: rotate id x y r
                 item_id = line[1]
-                x = int(line[2])    # 旋转中心x坐标
-                y = int(line[3])    # 旋转中心y坐标
-                r = int(line[4])    # 旋转角度（度）
-                item_dict[item_id] = ['rotate', x, y, r]
+                x = int(line[2])
+                y = int(line[3])
+                r = int(line[4])
+                item_type, p_list, algorithm, color = item_dict[item_id].values()
+                pixels = alg.rotate(p_list, x, y, r)
+                for x, y in pixels:
+                    canvas[height - 1 - y, x] = color
             # 存储缩放参数：类型、缩放中心、比例
             elif line[0] == 'scale':
                 # 命令格式: scale id x y s
                 item_id = line[1]
-                x = int(line[2])    # 缩放中心x坐标
-                y = int(line[3])    # 缩放中心y坐标
-                s = float(line[4])  # 缩放比例（支持浮点）
-                item_dict[item_id] = ['scale', x, y, s]
+                x = int(line[2])
+                y = int(line[3])
+                s = int(line[4])
+                item_type, p_list, algorithm, color = item_dict[item_id].values()
+                pixels = alg.scale(p_list, x, y, s)
+                for x, y in pixels:
+                    canvas[height - 1 - y, x] = color
             # 存储裁剪参数：类型、窗口坐标、算法
             elif line[0] == 'clip':
                 # 命令格式: clip id x0 y0 x1 y1 algorithm
@@ -126,7 +135,10 @@ if __name__ == '__main__':
                 x1 = int(line[4])   # 裁剪窗口右下角x
                 y1 = int(line[5])   # 裁剪窗口右下角y
                 algorithm = line[6] # 裁剪算法
-                item_dict[item_id] = ['clip', [[x0, y0], [x1, y1]], algorithm]
+                item_type, p_list, algorithm, color = item_dict[item_id].values()
+                pixels = alg.clip(p_list, x0, y0, x1, y1, algorithm)
+                for x, y in pixels:
+                    canvas[height - 1 - y, x] = color
             # 读取下一个命令
             line = fp.readline()
 
