@@ -115,11 +115,29 @@ class MyItem(QGraphicsItem):
                 painter.setPen(QColor(255, 0, 0))
                 painter.drawRect(self.boundingRect())
         elif self.item_type == 'polygon':
-            pass
+            # 绘制多边形（连接所有顶点形成闭合图形）
+            item_pixels = alg.draw_polygon(self.p_list, self.algorithm)
+            for p in item_pixels:
+                painter.drawPoint(*p)
+            if self.selected:
+                painter.setPen(QColor(255, 0, 0))
+                painter.drawRect(self.boundingRect())
         elif self.item_type == 'ellipse':
-            pass
+            # 绘制椭圆
+            item_pixels = alg.draw_ellipse(self.p_list)
+            for p in item_pixels:
+                painter.drawPoint(*p)
+            if self.selected:
+                painter.setPen(QColor(255, 0, 0))
+                painter.drawRect(self.boundingRect())
         elif self.item_type == 'curve':
-            pass
+            # 绘制曲线（Bezier或B-spline）
+            item_pixels = alg.draw_curve(self.p_list, self.algorithm)
+            for p in item_pixels:
+                painter.drawPoint(*p)
+            if self.selected:
+                painter.setPen(QColor(255, 0, 0))
+                painter.drawRect(self.boundingRect())
 
     def boundingRect(self) -> QRectF:
         if self.item_type == 'line':
@@ -131,11 +149,40 @@ class MyItem(QGraphicsItem):
             h = max(y0, y1) - y
             return QRectF(x - 1, y - 1, w + 2, h + 2)
         elif self.item_type == 'polygon':
-            pass
+            if not self.p_list:
+                return QRectF()
+            # 提取所有顶点的x和y坐标
+            xs = [p[0] for p in self.p_list]
+            ys = [p[1] for p in self.p_list]
+            x = min(xs)
+            y = min(ys)
+            w = max(xs) - x
+            h = max(ys) - y
+            # 扩大1像素边界，确保所有点都被包含
+            return QRectF(x - 1, y - 1, w + 2, h + 2)
         elif self.item_type == 'ellipse':
-            pass
+            if len(self.p_list) < 2:
+                return QRectF()
+            # 椭圆通常由矩形对角线两点定义
+            x0, y0 = self.p_list[0]
+            x1, y1 = self.p_list[1]
+            x = min(x0, x1)
+            y = min(y0, y1)
+            w = max(x0, x1) - x
+            h = max(y0, y1) - y
+            return QRectF(x - 1, y - 1, w + 2, h + 2)
         elif self.item_type == 'curve':
-            pass
+            if not self.p_list:
+                return QRectF()
+            # 曲线边界取所有控制点的范围
+            xs = [p[0] for p in self.p_list]
+            ys = [p[1] for p in self.p_list]
+            x = min(xs)
+            y = min(ys)
+            w = max(xs) - x
+            h = max(ys) - y
+            # 扩大边界以包含曲线可能超出控制点范围的部分
+            return QRectF(x - 5, y - 5, w + 10, h + 10)
 
 
 class MainWindow(QMainWindow):
