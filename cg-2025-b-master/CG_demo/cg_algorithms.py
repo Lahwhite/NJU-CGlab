@@ -38,6 +38,7 @@ def draw_line(p_list, algorithm):
             result.append((round(x), round(y)))
             x += x_inc
             y += y_inc
+        return result
     elif algorithm == 'Bresenham':
         # 计算坐标差值
         dx = x1 - x0
@@ -88,6 +89,8 @@ def draw_line(p_list, algorithm):
                     p += 2 * dx_abs
                 result.append((x, y))
         return result
+    else:
+        return []  # 未知算法时返回空列表
 
 
 def draw_polygon(p_list, algorithm):
@@ -99,7 +102,10 @@ def draw_polygon(p_list, algorithm):
     """
     result = []
     for i in range(len(p_list)):
-        line = draw_line([p_list[i - 1], p_list[i]], algorithm)
+        p1 = p_list[i - 1]
+        p2 = p_list[i]
+        # print(f"连接顶点 {p1} 到 {p2}")  # 调试打印
+        line = draw_line([p1, p2], algorithm)
         result += line
     return result
 
@@ -184,7 +190,7 @@ def draw_ellipse(p_list):
 def draw_curve(p_list, algorithm):
     """绘制曲线
 
-    :param p_list: (list of list of int: [[x0, y0], [x1, y1], [x2, y2], ...]) 曲线的控制点坐标列表（≥4个）
+    :param p_list: (list of list of int: [[x0, y0], [x1, y1], [x2, y2], ...]) 曲线的控制点坐标列表
     :param algorithm: (string) 绘制使用的算法，包括'Bezier'和'B-spline'
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], ...]) 绘制结果的像素点坐标列表
     """
@@ -193,22 +199,28 @@ def draw_curve(p_list, algorithm):
     curve_points = []
     n = len(p_list)
     # 检查控制点数量
-    if n < 4:
-        raise ValueError("至少需要4个控制点")
     if algorithm == 'Bezier':
-        # 对于多于4个控制点的情况，绘制多段三次Bezier曲线
-        # 采用连续方式：第i段的终点作为第i+1段的起点，确保曲线连续
-        for i in range(n - 3):
-            # 每4个连续控制点组成一段三次Bezier曲线
-            P0, P1, P2, P3 = p_list[i], p_list[i+1], p_list[i+2], p_list[i+3]
-            # 对当前段进行采样（第一段保留起点，后续段跳过起点避免重复）
-            start_idx = 0 if i == 0 else 1
-            for j in range(start_idx, num_points_per_segment + 1):
-                t = j / num_points_per_segment  # t∈[0,1]
-                # 三次Bezier曲线公式
-                x = (1-t)**3 * P0[0] + 3*(1-t)**2*t * P1[0] + 3*(1-t)*t**2 * P2[0] + t**3 * P3[0]
-                y = (1-t)**3 * P0[1] + 3*(1-t)**2*t * P1[1] + 3*(1-t)*t**2 * P2[1] + t**3 * P3[1]
-                curve_points.append([round(x), round(y)])
+        if n < 2:
+            raise ValueError("Bezier曲线至少需要2个控制点")
+    elif algorithm == 'B-spline':
+        if n < 4:
+            raise ValueError("B-spline曲线至少需要4个控制点")
+    else:
+        raise ValueError("未知的曲线算法")
+
+    if algorithm == 'Bezier':
+        # 对于Bezier曲线，使用所有控制点绘制一条曲线
+        # 采样点生成
+        for j in range(num_points_per_segment + 1):
+            t = j / num_points_per_segment  # t∈[0,1]
+            # 计算Bezier曲线上的点（使用De Casteljau算法思想）
+            points = [p.copy() for p in p_list]
+            m = len(points)
+            for k in range(1, m):
+                for i in range(m - k):
+                    points[i][0] = (1 - t) * points[i][0] + t * points[i + 1][0]
+                    points[i][1] = (1 - t) * points[i][1] + t * points[i + 1][1]
+            curve_points.append([round(points[0][0]), round(points[0][1])])
     elif algorithm == 'B-spline':
         # 三次B样条曲线（支持任意≥4个控制点）
         k = 3  # 三次B样条
@@ -245,19 +257,14 @@ def draw_curve(p_list, algorithm):
                     # 计算权重因子α
                     u_j = u[d - k + j]
                     u_jkr = u[d - k + j + k - r + 1]
-                    if u_jkr - u_j < 1e-6:  # 避免除零
+                    if u_jkr == u_j:
                         alpha = 0.0
                     else:
                         alpha = (t - u_j) / (u_jkr - u_j)
-                    # 线性插值计算当前层点
-                    p[j] = [
-                        (1 - alpha) * p[j - 1][0] + alpha * p[j][0],
-                        (1 - alpha) * p[j - 1][1] + alpha * p[j][1]
-                    ]
-            # 第k层的最后一个点即为曲线点
+                    # 计算当前层的点
+                    p[j][0] = (1 - alpha) * p[j - 1][0] + alpha * p[j][0]
+                    p[j][1] = (1 - alpha) * p[j - 1][1] + alpha * p[j][1]
             curve_points.append([round(p[k][0]), round(p[k][1])])
-    else:
-        raise ValueError("不支持的算法，可选算法：'Bezier'、'B-spline'")
     return curve_points
 
 

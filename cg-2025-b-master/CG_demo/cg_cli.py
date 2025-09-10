@@ -40,6 +40,9 @@ if __name__ == '__main__':
                 # 注意到此处的参数为：类型，控制点，算法，颜色
                 # 不存在多余算法的被保存为 ""
                 for item_type, p_list, algorithm, color in item_dict.values():
+                    # 加入图元已经被裁剪等原因导致点集合为空特判
+                    if not p_list:
+                        continue
                     if item_type == 'line':
                         pixels = alg.draw_line(p_list, algorithm)
                         for x, y in pixels:
