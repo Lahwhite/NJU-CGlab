@@ -15,8 +15,8 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QWidget,
     QStyleOptionGraphicsItem)
-from PyQt5.QtGui import QPainter, QMouseEvent, QColor
-from PyQt5.QtCore import QRectF
+from PyQt5.QtGui import QPainter, QMouseEvent, QColor, QPen
+from PyQt5.QtCore import QRectF, Qt, QPointF
 
 
 class MyCanvas(QGraphicsView):
@@ -26,7 +26,7 @@ class MyCanvas(QGraphicsView):
     def __init__(self, *args):
         super().__init__(*args)
         self.main_window = None
-        self.list_widget = None
+        self.list_widget = None  # 图元列表组件
         self.item_dict = {}
         self.selected_id = ''
 
@@ -34,6 +34,17 @@ class MyCanvas(QGraphicsView):
         self.temp_algorithm = ''
         self.temp_id = ''
         self.temp_item = None
+        
+        # AI 添加的变量
+        # 状态管理
+        self.current_state = "idle"  # 状态：idle/drawing/editing
+        self.current_draw_type = None  # 绘制类型：line/polygon/ellipse/curve
+        self.current_algorithm = None  # 绘制算法：DDA/Bresenham等
+        self.current_item_id = None  # 当前操作的图元ID
+        # 临时数据
+        self.temp_points = []  # 绘制过程中的临时点（如多边形顶点）
+        self.selected_item = None  # 当前选中的图元
+        self.edit_start_pos = None  # 编辑操作的起始鼠标位置
 
     def start_draw_line(self, algorithm, item_id):
         self.status = 'line'
@@ -77,13 +88,33 @@ class MyCanvas(QGraphicsView):
         pos = self.mapToScene(event.localPos().toPoint())
         x = int(pos.x())
         y = int(pos.y())
+        '''
         if self.status == 'line':
             self.temp_item = MyItem(self.temp_id, self.status, [[x, y], [x, y]], self.temp_algorithm)
             self.scene().addItem(self.temp_item)
         self.updateScene([self.sceneRect()])
         super().mousePressEvent(event)
+        '''
+        if event.button() == Qt.LeftButton:
+            if self.current_state == "drawing":
+                # 绘制状态：收集临时点（如线段起点、多边形顶点）
+                self.temp_points.append([x, y])
+                # 特殊逻辑：线段只需2个点，收集完直接绘制
+                if self.current_draw_type == "line" and len(self.temp_points) == 2:
+                    self.finish_drawing()
+            elif self.current_state == "idle":
+                # 空闲状态：尝试选择图元
+                self.select_item(pos)
+            elif self.current_state == "editing":
+                # 编辑状态：记录编辑起始位置（如平移起点）
+                self.edit_start_pos = (x, y)
+        elif event.button() == Qt.RightButton and self.current_state == "drawing":
+            # 右键结束多步绘制（如多边形、曲线）
+            if len(self.temp_points) >= 2:  # 确保有足够的点
+                self.finish_drawing()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        '''
         pos = self.mapToScene(event.localPos().toPoint())
         x = int(pos.x())
         y = int(pos.y())
@@ -91,13 +122,39 @@ class MyCanvas(QGraphicsView):
             self.temp_item.p_list[1] = [x, y]
         self.updateScene([self.sceneRect()])
         super().mouseMoveEvent(event)
+        '''
+        if self.current_state == "drawing" and self.current_draw_type in ["line", "ellipse"]:
+            # 实时预览：临时绘制当前轨迹（如线段从起点到鼠标位置）
+            if len(self.temp_points) == 1:
+                # 清除上一次预览
+                self.scene().removeItem(getattr(self, "preview_item", None))
+                # 绘制新预览（以线段为例）
+                start = self.temp_points[0]
+                end = [int(self.mapToScene(event.pos()).x()), int(self.mapToScene(event.pos()).y())]
+                # 调用绘制算法生成预览像素（需结合cg_algorithms.py）
+                from cg_algorithms import draw_line
+                pixels = draw_line([start, end], self.current_algorithm)
+                # 创建预览图元（简化：用QGraphicsLineItem）
+                from PyQt5.QtWidgets import QGraphicsLineItem
+                self.preview_item = QGraphicsLineItem(start[0], start[1], end[0], end[1])
+                self.preview_item.setPen(QPen(QColor(128, 128, 128), 1, Qt.DashLine))  # 灰色虚线预览
+                self.scene().addItem(self.preview_item)
+        elif self.current_state == "editing" and self.selected_item and self.edit_start_pos:
+            # 编辑预览：实时更新图元位置（如平移）
+            dx = int(self.mapToScene(event.pos()).x()) - self.edit_start_pos[0]
+            dy = int(self.mapToScene(event.pos()).y()) - self.edit_start_pos[1]
+            # 调用平移算法更新图元（需结合cg_algorithms.py的translate）
+            from cg_algorithms import translate
+            new_points = translate(self.selected_item.points, dx, dy)
+            # =======================================================================待完成=======
+            self.selected_item.update_points(new_points)  # 自定义图元需实现update_points方法
+            self.edit_start_pos = (int(self.mapToScene(event.pos()).x()), int(self.mapToScene(event.pos()).y()))
 
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if self.status == 'line':
-            self.item_dict[self.temp_id] = self.temp_item
-            self.list_widget.addItem(self.temp_id)
-            self.finish_draw()
-        super().mouseReleaseEvent(event)
+    def mouseReleaseEvent(self, event):
+        if self.current_state == "editing" and self.selected_item:
+            # 结束编辑，更新图元状态
+            self.current_state = "idle"
+            self.parent.statusBar().showMessage("编辑完成")
 
 
 class MyItem(QGraphicsItem):
