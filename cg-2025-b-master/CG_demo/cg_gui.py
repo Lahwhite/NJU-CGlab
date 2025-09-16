@@ -68,10 +68,52 @@ class MyCanvas(QGraphicsView):
     def finish_draw(self):
         self.temp_id = self.main_window.get_id()
 
+    def finish_drawing(self):
+        # 根据绘制类型创建图元（以线段为例）
+        if self.current_draw_type == "line":
+            from cg_algorithms import draw_line
+            pixels = draw_line(self.temp_points, self.current_algorithm)
+            # 创建自定义图元（继承QGraphicsItem，存储ID、点集等信息）
+            item = MyItem(
+                id=self.current_item_id,
+                type=self.current_draw_type,
+                points=self.temp_points,
+                pixels=pixels
+            )
+            self.scene().addItem(item)
+            # 添加到列表组件
+            if self.list_widget:
+                self.list_widget.addItem(self.current_item_id)
+            # 重置状态
+            self.temp_points = []
+            self.current_state = "idle"
+            self.parent.statusBar().showMessage("绘制完成")
+
+    def select_item(self, scene_pos):
+    # 遍历场景中所有图元，检测是否包含点击点
+        for item in self.scene().items():
+            if isinstance(item, MyItem) and item.contains(scene_pos):
+                # 高亮选中图元（如红色边框）
+                item.setPen(QPen(QColor(255, 0, 0), 2))  # 红色粗边框
+                self.selected_item = item
+                self.parent.statusBar().showMessage(f"选中图元: {item.id}")
+                # 更新列表组件选中状态
+                if self.list_widget:
+                    self.list_widget.setCurrentText(item.id)
+                return
+        # 未选中任何图元，清除之前的选中状态
+        self.clear_selection()
+
     def clear_selection(self):
+        '''
         if self.selected_id != '':
             self.item_dict[self.selected_id].selected = False
             self.selected_id = ''
+        '''
+        if self.selected_item:
+            self.selected_item.setPen(QPen(QColor(0, 0, 0), 1))  # 恢复默认黑色边框
+            self.selected_item = None
+
 
     def selection_changed(self, selected):
         self.main_window.statusBar().showMessage('图元选择： %s' % selected)
