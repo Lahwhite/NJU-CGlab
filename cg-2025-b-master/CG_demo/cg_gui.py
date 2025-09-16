@@ -107,9 +107,16 @@ class MyCanvas(QGraphicsView):
     def reset_canvas(self, width: int, height: int):
         """重置画布"""
         self.scene.clear()
+        # 清除所有临时状态（关键修复）
+        self.temp_points = []
+        self.selected_item = None
+        self.preview_item = None
+        self.current_state = "idle"
+        # 更新列表和场景
         if self.list_widget:
             self.list_widget.clear()
         self.setSceneRect(0, 0, width, height)
+        self.scene.update()  # 强制刷新
         self.statusBar.showMessage(f"画布重置为 {width}x{height}")
 
     def save_canvas(self, path: str):
@@ -136,6 +143,7 @@ class MyCanvas(QGraphicsView):
         if self.selected_item:
             self.selected_item.selected = False
             self.selected_item.update()
+            self.selected_item = None  # 显式置空
         # 选中新图元
         for scene_item in self.scene.items():
             if isinstance(scene_item, MyItem) and scene_item.id == item_id:
@@ -143,6 +151,7 @@ class MyCanvas(QGraphicsView):
                 self.selected_item.selected = True
                 self.selected_item.update()
                 break
+        self.scene.update()  # 刷新场景
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         pos = self.mapToScene(event.pos())
@@ -173,9 +182,10 @@ class MyCanvas(QGraphicsView):
             # 实时预览（线段/椭圆）
             pos = self.mapToScene(event.pos())
             x, y = int(pos.x()), int(pos.y())
-            # 移除上一次预览
+            # 移除上一次预览（关键修复：确保预览图元被彻底移除）
             if self.preview_item:
                 self.scene.removeItem(self.preview_item)
+                self.preview_item = None  # 显式置空，避免引用残留
             # 生成预览图元
             preview_points = self.temp_points + [[x, y]]
             self.preview_item = MyItem(
@@ -209,10 +219,11 @@ class MyCanvas(QGraphicsView):
             else:
                 return
 
-            # 更新图元
+            # 更新图元后强制刷新
             self.selected_item.p_list = new_points
-            self.selected_item.update()
-            self.edit_start_pos = (x, y)  # 更新起始位置
+            self.selected_item.update()  # 更新单个图元
+            self.scene.update()  # 强制刷新整个场景（关键修复）
+            self.edit_start_pos = (x, y)
 
         super().mouseMoveEvent(event)
 
